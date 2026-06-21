@@ -1,6 +1,8 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
+require('dotenv').config();
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.mongodb.net/?retryWrites=true&w=majority`;
+// আপনার আসল ক্লাস্টার লিংকটি এখানে বসিয়ে দেওয়া হলো
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.cxpbp1t.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -16,16 +18,20 @@ async function connectDB() {
   if (db) return db;
   try {
     await client.connect();
-    db = client.db('fitnessPlatformDB');
-    console.log('✅ MongoDB Connected');
+    db = client.db('fitnessPlatformDB'); // আপনার ডাটাবেজের নাম
+    console.log('✅ MongoDB Connected successfully!');
     return db;
   } catch (err) {
-    console.error(' MongoDB connection error:', err);
+    console.error('❌ MongoDB connection error:', err);
     process.exit(1);
   }
 }
 
 function getCollections() {
+  if (!db) {
+    // যদি কোনো কারণে কানেকশনের আগেই কালেকশন খোঁজে, ক্র্যাশ এড়ানোর জন্য ডাটাবেজ অবজেক্ট ইনিশিয়েট করা
+    db = client.db('fitnessPlatformDB');
+  }
   return {
     usersCollection: db.collection('users'),
     classesCollection: db.collection('classes'),

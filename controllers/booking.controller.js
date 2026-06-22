@@ -1,56 +1,107 @@
 const { getCollections } = require('../config/db');
 const { ObjectId } = require('mongodb');
 
-// GET /bookings/check/:classId?email=... -> Class Details page e button state set korte
-const checkBooking = async (req, res) => {
-  const { bookingsCollection } = getCollections();
-  const { classId } = req.params;
-  const { email } = req.query;
+/**
+ * @desc    Check if a student has already booked a specific class
+ * @route   GET /bookings/check-enrollment
+ */
+const checkEnrollment = async (req, res) => {
+  try {
+    const { bookingsCollection } = getCollections();
+    const { email, classId } = req.query;
 
-  const existing = await bookingsCollection.findOne({
-    classId,
-    studentEmail: email,
-  });
+    if (!email || !classId) {
+      return res.status(400).send({ message: "Email and ClassId are required" });
+    }
 
-  res.send({ alreadyBooked: !!existing });
-};
+    const existing = await bookingsCollection.findOne({
+      classId: classId,
+      studentEmail: email,
+    });
 
-// GET /bookings/user/:email -> user's "Booked Classes" page
-const getUserBookings = async (req, res) => {
-  const { bookingsCollection } = getCollections();
-  const email = req.params.email;
-  const bookings = await bookingsCollection.find({ studentEmail: email }).toArray();
-  res.send(bookings);
-};
-
-// POST /bookings -> called from Payment Page AFTER successful stripe payment
-const createBooking = async (req, res) => {
-  const { bookingsCollection, classesCollection } = getCollections();
-  const booking = req.body;
-  // booking = { classId, className, trainerEmail, trainerName, schedule,
-  //             studentEmail, studentName, price, transactionId }
-
-  // Safety: prevent duplicate booking even if user double-clicks / re-submits payment
-  const existing = await bookingsCollection.findOne({
-    classId: booking.classId,
-    studentEmail: booking.studentEmail,
-  });
-  if (existing) {
-    return res.status(409).send({ message: 'You have already booked this class' });
+    res.status(200).send({ enrolled: !!existing });
+  } catch (error) {
+    console.error("Error in checkEnrollment:", error);
+    res.status(500).send({ message: "Internal server error" });
   }
-
-  const result = await bookingsCollection.insertOne({
-    ...booking,
-    bookedAt: new Date(),
-  });
-
-  // increment bookingCount on the class for "Featured Classes" sorting
-  await classesCollection.updateOne(
-    { _id: new ObjectId(booking.classId) },
-    { $inc: { bookingCount: 1 } }
-  );
-
-  res.send(result);
 };
 
-module.exports = { checkBooking, getUserBookings, createBooking };
+/**
+ * @desc    Check booking compatibility (Legacy support)
+ * @route   GET /bookings/check/:classId
+ */
+const checkBooking = async (req, res) => {
+  try {
+    const { bookingsCollection } = getCollections();
+    const { classId } = req.params;
+    const { email } = req.query;
+
+    const existing = await bookingsCollection.findOne({
+      classId: classId,
+      studentEmail: email,
+    });
+
+    res.status(200).send({ alreadyBooked: !!existing });
+  } catch (error) {
+    console.error("Error in checkBooking:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+/**
+ * @desc    Get all bookings for a specific user
+ * @route   GET /bookings/user/:email
+ */
+const getUserBookings = async (req, res) => {
+  try {
+    const { bookingsCollection } = getCollections();
+    const email = req.params.email;
+    const bookings = await bookingsCollection.find({ studentEmail: email }).toArray();
+    res.status(200).send(bookings);
+  } catch (error) {
+    console.error("Error in getUserBookings:", error);
+    res.status(500).send({ message: "Failed to fetch user bookings" });
+  }
+};
+
+/**
+ * @desc    Create a new booking after successful payment
+ * @route   POST /bookings
+ */
+const createBooking = async (req, res) => {
+  try {
+    const { bookingsCollection, classesCollection } = getCollections();
+    const booking = req.body;
+
+    // Check for existing booking
+    const existing = await bookingsCollection.findOne({
+      classId: booking.classId,
+      studentEmail: booking.studentEmail,
+    });
+
+    if (existing) {
+      return res.status(409).send({ message: 'You have already booked this class' });
+    }
+
+    // Insert new booking
+    const result = await bookingsCollection.insertOne({
+      ...booking,
+      bookedAt: new Date(),
+    });
+
+    // Increment booking count
+    if (booking.classId && ObjectId.isValid(booking.classId)) {
+      await classesCollection.updateOne(
+        { _id: new ObjectId(booking.classId) },
+        { $inc: { bookingCount: 1 } }
+      );
+    }
+
+    res.status(201).send({ success: true, insertedId: result.insertedId });
+  } catch (error) {
+    console.error("Error in createBooking:", error);
+    res.status(500).send({ message: "Failed to create booking" });
+  }
+};
+
+module.exports = { checkEnrollment, checkBooking, getUserBookings, createBooking };

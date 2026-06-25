@@ -10,7 +10,7 @@ const {
 } = require('../controllers/booking.controller');
 
 // Route to check enrollment via query parameters (For the "Already Enrolled" button)
-router.get('/check-enrollment', verifyToken, checkEnrollment);
+router.get('/check-enrollment',  checkEnrollment);
 
 // Original routes
 router.get('/check/:classId', verifyToken, checkBooking);

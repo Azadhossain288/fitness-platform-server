@@ -15,8 +15,8 @@ const checkEnrollment = async (req, res) => {
     }
 
     const existing = await bookingsCollection.findOne({
-      classId: classId,
-      studentEmail: email,
+      userEmail: email.trim(),
+      classId: classId.trim()
     });
 
     res.status(200).send({ enrolled: !!existing });
@@ -38,7 +38,7 @@ const checkBooking = async (req, res) => {
 
     const existing = await bookingsCollection.findOne({
       classId: classId,
-      studentEmail: email,
+      userEmail: email,
     });
 
     res.status(200).send({ alreadyBooked: !!existing });
@@ -56,7 +56,7 @@ const getUserBookings = async (req, res) => {
   try {
     const { bookingsCollection } = getCollections();
     const email = req.params.email;
-    const bookings = await bookingsCollection.find({ studentEmail: email }).toArray();
+    const bookings = await bookingsCollection.find({ userEmail: email }).toArray();
     res.status(200).send(bookings);
   } catch (error) {
     console.error("Error in getUserBookings:", error);
@@ -76,7 +76,7 @@ const createBooking = async (req, res) => {
     // Check for existing booking
     const existing = await bookingsCollection.findOne({
       classId: booking.classId,
-      studentEmail: booking.studentEmail,
+      userEmail: booking.userEmail,
     });
 
     if (existing) {

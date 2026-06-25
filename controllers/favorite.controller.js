@@ -9,27 +9,29 @@ const checkFavorite = async (req, res) => {
 
   const existing = await favoritesCollection.findOne({
     classId,
-    userEmail: email,
+    $or: [{ userEmail: email }, { email: email }]
   });
-  res.send({ isFavorite: !!existing });
+  res.send({ isFavorite: !!existing, favoriteId: existing?._id || null });
 };
 
-// GET /favorites/user/:email -> Favorite Classes page
+// GET /favorites/user/:email
 const getUserFavorites = async (req, res) => {
   const { favoritesCollection } = getCollections();
   const email = req.params.email;
-  const favorites = await favoritesCollection.find({ userEmail: email }).toArray();
+  const favorites = await favoritesCollection.find({
+    $or: [{ userEmail: email }, { email: email }]
+  }).toArray();
   res.send(favorites);
 };
 
-// POST /favorites -> add to favorites, prevent duplicate
+// POST /favorites
 const addFavorite = async (req, res) => {
   const { favoritesCollection } = getCollections();
-  const favorite = req.body; // { classId, className, image, price, userEmail }
+  const favorite = req.body;
 
   const existing = await favoritesCollection.findOne({
     classId: favorite.classId,
-    userEmail: favorite.userEmail,
+    $or: [{ userEmail: favorite.userEmail }, { email: favorite.email }]
   });
   if (existing) {
     return res.status(409).send({ message: 'Already in favorites' });
@@ -42,7 +44,7 @@ const addFavorite = async (req, res) => {
   res.send(result);
 };
 
-// DELETE /favorites/:id -> remove from favorites
+// DELETE /favorites/:id
 const removeFavorite = async (req, res) => {
   const { favoritesCollection } = getCollections();
   const id = req.params.id;

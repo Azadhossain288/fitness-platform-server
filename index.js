@@ -10,8 +10,8 @@ const port = process.env.PORT || 5000;
 app.use(cors({
   origin: [
     'https://fitness-platform-client-rxw4.vercel.app', 
-    process.env.CLIENT_URL
-  ].filter(Boolean),
+    'http://localhost:3000' 
+  ],
   credentials: true,
 }));
 app.use(express.json());

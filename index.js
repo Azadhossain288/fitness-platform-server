@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 // Middleware Setup
 app.use(cors({
   origin: [
-    'http://localhost:3000', 
+    'https://fitness-platform-client-rxw4.vercel.app', 
     process.env.CLIENT_URL
   ].filter(Boolean),
   credentials: true,

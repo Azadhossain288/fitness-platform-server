@@ -1,3 +1,6 @@
+
+const { getCollections } = require('../config/db');
+
 const express = require('express');
 const router = express.Router();
 const verifyToken = require('../middlewares/verifyToken');
@@ -14,8 +17,25 @@ const {
 } = require('../controllers/class.controller');
 
 router.get('/', getAllClasses); // public, approved only, search+filter+pagination
+
+router.get('/all', async (req, res) => {
+  try {
+    const { classesCollection } = getCollections();
+    const classes = await classesCollection.find({}).toArray();
+    res.send({ classes });
+  } catch (err) {
+    res.status(500).send({ message: 'Error fetching classes' });
+  }
+});
+
+
 router.get('/featured', getFeaturedClasses); // public, home page
 router.get('/trainer/:email', verifyToken, verifyTrainer, getClassesByTrainer);
+
+
+
+
+
 router.get('/:id', verifyToken, getClassById); // private - class details
 router.get('/:id/attendees', verifyToken, verifyTrainer, getClassAttendees);
 

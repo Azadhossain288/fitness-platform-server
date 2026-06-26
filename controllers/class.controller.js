@@ -43,6 +43,11 @@ const getFeaturedClasses = async (req, res) => {
 const getClassById = async (req, res) => {
   const { classesCollection } = getCollections();
   const id = req.params.id;
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).send({ message: 'Invalid class ID' });
+  }
+
   const result = await classesCollection.findOne({ _id: new ObjectId(id) });
   res.send(result);
 };

@@ -2,6 +2,8 @@ const { getCollections } = require('../config/db');
 const { ObjectId } = require('mongodb');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
+const domain = process.env.NEXT_PUBLIC_CLIENT_URL || 'https://fitness-platform-client-rxw4.vercel.app';
+
 /**
  * @desc    Create a Stripe Checkout Session for a hosted payment page.
  * @route   POST /payments/create-checkout-session
@@ -32,8 +34,8 @@ const createCheckoutSession = async (req, res) => {
       ],
       mode: 'payment',
       // Return to your frontend with necessary transaction details
-      success_url: `http://localhost:3000/payment-success?session_id={CHECKOUT_SESSION_ID}&classId=${classId}&email=${userEmail}&price=${price}&className=${encodeURIComponent(className)}`,
-      cancel_url: `http://localhost:3000/class-details/${classId}`,
+      success_url: `${domain}/payment-success?session_id={CHECKOUT_SESSION_ID}&classId=${classId}&email=${userEmail}&price=${price}&className=${encodeURIComponent(className)}`,
+      cancel_url: `${domain}/class-details/${classId}`,
     });
 
     // Send the checkout URL to the frontend for redirection
